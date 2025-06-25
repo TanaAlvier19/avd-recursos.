@@ -1,81 +1,136 @@
 'use client';
 
 import { useEffect, useState, useContext } from 'react';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
 import { AuthContext } from "@/app/context/AuthContext";
 import { useRouter } from 'next/navigation';
-Chart.register(ArcElement, Tooltip, Legend);
-export type Leave = {
-  id: number;
-  motivo: string;
-  inicio: string;
-  fim: string;
-  justificativo: string | null;
-  status: "pendente" | "aprovada" | "rejeitada";
-  admin_comentario: string | null;
-  created_at: string;
-  funcionario_nome: string;
+
+type Perfil = {
+  nome: string;
+  cargo: string;
+  departamento: string;
+  email: string;
 };
 
-const FuncionarioDashboard = () => {
-  const {accessToken}=useContext(AuthContext)
-  const [funcionarios, setFuncionarios] = useState([]);
-  const [ativos, setAtivos] = useState(0);
-  const [reprovada, setreprovadas] = useState(0);
-  const [aprovada, setAprovadas] = useState(0);
-  const [dispensa, setdispensa] = useState(0);
-  const [totalPresencas, setTotalPresencas] = useState(0);
-  const [departamentos, setDepartamentos] = useState([]);
-   const router = useRouter()
- useEffect(() => {
-     fetch('https://backend-django-2-7qpl.onrender.com/api/dispensa/my/', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-       .then(res => res.json())
-       .then((j) => {
-      setdispensa(j);
-      const aprovadas = j.filter((l: { status: string; }) => l.status === "aprovado").length;
-      const reprovadas = j.filter((l: { status: string; }) => l.status === "rejeitado").length;
+type Avaliacao = {
+  nota: number;
+  feedback: string;
+  data: string;
+};
 
-      console.log("Aprovadas:", aprovadas);
-      console.log("Rejeitadas:", reprovadas);
-      setAprovadas(aprovadas);
-      setreprovadas(reprovadas);
-    })
-       .catch(err => console.error(err))
-   }, [accessToken])
-  
-   useEffect(() => {
+type Formacao = {
+  titulo: string;
+  data_inicio: string;
+  local: string;
+};
+
+type Notificacao = {
+  titulo: string;
+  mensagem: string;
+  data: string;
+};
+
+const PainelFuncionario = () => {
+  const { accessToken } = useContext(AuthContext);
+  const router = useRouter();
+
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [avaliacao, setAvaliacao] = useState<Avaliacao | null>(null);
+  const [formacoes, setFormacoes] = useState<Formacao[]>([]);
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+
+  useEffect(() => {
     if (!accessToken) {
-      router.push('/logincomsenha') 
+      router.push("/logincomsenha");
+      return;
     }
-  }, [accessToken, router])
-  if (!accessToken) return null
+
+    const fetchDados = async () => {
+      try {
+        const [resPerfil, resAvaliacao, resFormacoes, resNotificacoes] = await Promise.all([
+          fetch('https://backend-django-2-7qpl.onrender.com/api/funcionario/meu-perfil/', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+          fetch('https://backend-django-2-7qpl.onrender.com/api/avaliacoes/minha/', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+          fetch('https://backend-django-2-7qpl.onrender.com/api/formacoes/futuras/', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+          fetch('https://backend-django-2-7qpl.onrender.com/api/notificacoes/', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }),
+        ]);
+
+        setPerfil(await resPerfil.json());
+        setAvaliacao(await resAvaliacao.json());
+        setFormacoes(await resFormacoes.json());
+        setNotificacoes(await resNotificacoes.json());
+      } catch (err) {
+        console.error('Erro ao carregar dados do funcionário:', err);
+      }
+    };
+
+    fetchDados();
+  }, [accessToken]);
+
+  if (!accessToken) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 space-y-8">
-      <h1 className="md:text-4xl font-bold text-gray-500">Painel do Funcionario</h1>
+    <div className="min-h-screen bg-gray-100 p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-gray-600">Painel do Funcionário</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Cadastrados', value: funcionarios.length, color: 'blue' },
-          { label: 'Dispensas Reprovadas', value: reprovada, color: 'teal' },
-          { label: 'Dispensas Aprovadas', value: aprovada, color: 'yellow' },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className={`bg-white p-4 rounded-lg shadow-md border-l-4 border-${item.color}-500`}
-          >
-            <h2 className="text-gray-500">{item.label}</h2>
-            <p className={`text-2xl font-bold text-${item.color}-600`}>{item.value}</p>
-          </div>
-        ))}
-      </div>
+      {/* Perfil */}
+      {perfil && (
+        <div className="bg-white p-6 rounded-xl shadow space-y-2">
+          <h2 className="text-xl font-semibold text-gray-700">👤 Meu Perfil</h2>
+          <p><strong>Nome:</strong> {perfil.nome}</p>
+          <p><strong>Cargo:</strong> {perfil.cargo}</p>
+          <p><strong>Departamento:</strong> {perfil.departamento}</p>
+          <p><strong>Email:</strong> {perfil.email}</p>
+        </div>
+      )}
 
+      {/* Avaliação */}
+      {avaliacao && (
+        <div className="bg-white p-6 rounded-xl shadow space-y-2">
+          <h2 className="text-xl font-semibold text-gray-700">📈 Avaliação de Desempenho</h2>
+          <p><strong>Nota:</strong> {avaliacao.nota}%</p>
+          <p><strong>Feedback:</strong> {avaliacao.feedback}</p>
+          <p><strong>Última Avaliação:</strong> {avaliacao.data}</p>
+        </div>
+      )}
 
+      {/* Formações futuras */}
+      {formacoes.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">📚 Formações Futuras</h2>
+          <ul className="space-y-1 list-disc pl-5">
+            {formacoes.map((f, i) => (
+              <li key={i}>
+                <span className="font-medium">{f.titulo}</span> — {f.data_inicio} em {f.local}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Notificações */}
+      {notificacoes.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">🔔 Notificações</h2>
+          <ul className="space-y-3">
+            {notificacoes.map((n, i) => (
+              <li key={i} className="border-l-4 border-blue-500 pl-4">
+                <p className="font-bold">{n.titulo}</p>
+                <p className="text-gray-600">{n.mensagem}</p>
+                <p className="text-sm text-gray-400">{n.data}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
 
-export default FuncionarioDashboard;
+export default PainelFuncionario;
