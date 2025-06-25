@@ -5,12 +5,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { AuthProvider } from "@/app/context/AuthContext";
-import { useState } from "react";
+import { useState, useRef , useEffect} from "react";
 export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let menuref = useRef<HTMLDivElement>(null);
+useEffect(() => {
+    
+    document.addEventListener("click", handleClickOutside, true);
+
+}, []);
+const handleClickOutside = (event: { target: any; }) => {
+    if (menuref.current && !menuref.current.contains(event.target)) {
+        console.log("Clique fora do menu");
+        setabrirMenu(false);
+    } else if (menuref.current) {
+        console.log("Clique dentro do menu");
+    }
+};
    const [abrirMenu, setabrirMenu]=useState(false)
   return (
     <div className="h-screen flex">
@@ -18,7 +32,7 @@ export default function DashboardLayout({
         <Menu1 />
       </div>
        {abrirMenu && (
-        <div className="inset-0 bg-blue-500 z-50 md:hidden w-[20%] shadow-lg p-4">
+        <div className="inset-0 bg-blue-500 z-50 md:hidden w-[20%] shadow-lg p-4" ref={menuref}>
                   <Menu1/>
         </div>
               )}
