@@ -27,7 +27,7 @@ export type Leave = {
   inicio: string;
   fim: string;
   justificativo: string | null;
-  status: "pendente" | "aprovada" | "rejeitada";
+  status: "pendente" | "aprovado" | "rejeitado";
   admin_comentario: string | null;
   created_at: string;
   funcionario_nome: string;
