@@ -33,7 +33,7 @@ const menuItems = [
       {
         icon: <LibraryBig />,
         label: "Formações",
-        href: "/list/Formacoes",
+        href: "/list/get_courses",
       },
       {
         icon: <ChartBarBig />,
