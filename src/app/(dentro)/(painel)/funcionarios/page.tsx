@@ -39,7 +39,6 @@ const FuncionarioDashboard = () => {
       const aprovadas = j.filter((l: { status: string; }) => l.status === "aprovado").length;
       const reprovadas = j.filter((l: { status: string; }) => l.status === "rejeitado").length;
       const pendente = j.filter((l: { status: string; }) => l.status === "pendente").length;
-      console.log(j.map(l=>l.status))
       console.log("Aprovadas:", aprovadas);
       console.log("Rejeitadas:", reprovadas);
       setAprovadas(aprovadas);
