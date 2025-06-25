@@ -5,56 +5,56 @@ import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { AuthContext } from "@/app/context/AuthContext";
 import { useRouter } from 'next/navigation';
-
 Chart.register(ArcElement, Tooltip, Legend);
-
 export type Leave = {
   id: number;
   motivo: string;
   inicio: string;
   fim: string;
   justificativo: string | null;
-  status: "pendente" | "aprovada" | "rejeitada";
+  status: "pendente" | "aprovado" | "rejeitad0";
   admin_comentario: string | null;
   created_at: string;
   funcionario_nome: string;
 };
 
 const FuncionarioDashboard = () => {
-  const { accessToken } = useContext(AuthContext);
+  const {accessToken,userName, userLoading}=useContext(AuthContext)
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [ativos, setAtivos] = useState(0);
+  const [reprovada, setreprovadas] = useState(0);
   const [aprovada, setAprovadas] = useState(0);
-  const [reprovada, setReprovadas] = useState(0);
-  const [pendente, setPendentes] = useState(0);
-  const [total, setTotal] = useState(0);
-
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!accessToken) {
-      router.push('/logincomsenha');
-      return;
-    }
-
-    fetch('https://backend-django-2-7qpl.onrender.com/api/dispensa/my/', {
+  const [dispensa, setdispensa] = useState(0);
+  const [pendente, setpendente] = useState(0);
+  const [totalPresencas, setTotalPresencas] = useState(0);
+  const [departamentos, setDepartamentos] = useState([]);
+   const router = useRouter()
+ useEffect(() => {
+     fetch('https://backend-django-2-7qpl.onrender.com/api/dispensa/my/', {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-      .then(res => res.json())
-      .then((j: Leave[]) => {
-        const aprovadas = j.filter(l => l.status === "aprovado").length;
-        const reprovadas = j.filter(l => l.status === "rejeitado").length;
-        const pendentes = j.filter(l => l.status === "pendente").length;
-
-        setTotal(j.length);
-        setAprovadas(aprovadas);
-        setReprovadas(reprovadas);
-        setPendentes(pendentes);
-      })
-      .catch(err => console.error(err));
-  }, [accessToken, router]);
-
-  if (!accessToken) return null;
-
-  const doughnutData = {
+       .then(res => res.json())
+       .then((j) => {
+      setdispensa(j.length);
+      const aprovadas = j.filter((l: { status: string; }) => l.status === "aprovado").length;
+      const reprovadas = j.filter((l: { status: string; }) => l.status === "rejeitado").length;
+      const pendente = j.filter((l: { status: string; }) => l.status === "pendente").length;
+      console.log(j.map(l=>l.status))
+      console.log("Aprovadas:", aprovadas);
+      console.log("Rejeitadas:", reprovadas);
+      setAprovadas(aprovadas);
+      setreprovadas(reprovadas);
+      setpendente(pendente);
+    })
+       .catch(err => console.error(err))
+   }, [accessToken])
+  
+   useEffect(() => {
+    if (!userLoading && !accessToken) {
+      router.push("/logincomsenha");
+    }
+  }, [accessToken, userLoading, router]);
+const doughnutData = {
     labels: ['Aprovadas', 'Rejeitadas', 'Pendentes'],
     datasets: [
       {
@@ -64,14 +64,13 @@ const FuncionarioDashboard = () => {
       },
     ],
   };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6 space-y-8">
+     <div className="min-h-screen bg-gray-50 p-6 space-y-8">
       <h1 className="md:text-4xl font-bold text-gray-500">Painel do Funcionário</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {[
-          { label: 'Total de Dispensas', value: total, color: 'blue' },
+          { label: 'Total de Dispensas', value: dispensa, color: 'blue' },
           { label: 'Aprovadas', value: aprovada, color: 'green' },
           { label: 'Rejeitadas', value: reprovada, color: 'red' },
           { label: 'Pendentes', value: pendente, color: 'yellow' },
