@@ -94,7 +94,7 @@ function calculateDays(start: string, end: string): number {
     if (file) {
       Swal.fire({ title: 'Carregando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     }
-    const res = await fetch("https://3b63-102-214-36-178.ngrok-free.app/api/dispensa/create/", {
+    const res = await fetch("https://166e-102-218-85-158.ngrok-free.app/api/dispensa/create/", {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
       body,
@@ -193,9 +193,9 @@ function calculateDays(start: string, end: string): number {
                 </span>
               </TableCell>
               <TableCell>
-                {l.status === 'aprovada' ? (
+                {l.status === 'aprovado' ? (
                   <Badge color="bg-green-500">Aprovado</Badge>
-                ) : l.status === 'rejeitada' ? (
+                ) : l.status === 'rejeitado' ? (
                   <Badge color="bg-red-500">Rejeitado</Badge>
                 ) : (
                   <Badge color="bg-yellow-500">Pendente</Badge>
@@ -204,7 +204,7 @@ function calculateDays(start: string, end: string): number {
               <TableCell>{l.admin_comentario || "—"}</TableCell>
               <TableCell>
                 {l.justificativo ? (
-                  <a href={`https://3b63-102-214-36-178.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank" rel="noopener noreferrer">Ver PDF</a>
+                  <a href={`https://166e-102-218-85-158.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank" rel="noopener noreferrer">Ver PDF</a>
                 ) : "—"}
               </TableCell>
               <TableCell>{l.funcionario_nome}</TableCell>
