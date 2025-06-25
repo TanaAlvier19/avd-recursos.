@@ -40,8 +40,8 @@ const FuncionarioDashboard = () => {
     })
       .then(res => res.json())
       .then((j: Leave[]) => {
-        const aprovadas = j.filter(l => l.status === "aprovada").length;
-        const reprovadas = j.filter(l => l.status === "rejeitada").length;
+        const aprovadas = j.filter(l => l.status === "aprovado").length;
+        const reprovadas = j.filter(l => l.status === "rejeitado").length;
         const pendentes = j.filter(l => l.status === "pendente").length;
 
         setTotal(j.length);
