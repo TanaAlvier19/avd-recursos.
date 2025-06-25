@@ -125,7 +125,7 @@ const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
                       </span></p>
               <p>Status: {l.status}</p>
               <p>Justificativo:  {l.justificativo ? (
-                        <a href={`https://fc46-102-218-85-18.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank"><Download/></a>
+                        <a href={`https://166e-102-218-85-158.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank"><Download/></a>
                       ) : "—"}</p>
               <p className="flex ">Ações:  {l.status === "pendente" ? (
                         <>
@@ -173,7 +173,7 @@ const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
                 <TableCell>{l.status}</TableCell>
                 <TableCell>
                   {l.justificativo ? (
-                             <a  href={`https://3b63-102-214-36-178.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank" rel="noopener noreferrer"><Download/></a>
+                             <a  href={`https://166e-102-218-85-158.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank" rel="noopener noreferrer"><Download/></a>
                     
                   ) : "—"}
                 </TableCell>
