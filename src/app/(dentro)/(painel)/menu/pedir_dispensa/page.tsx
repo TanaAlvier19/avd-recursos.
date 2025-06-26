@@ -1,5 +1,6 @@
 'use client';
-
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import React, { useState, useEffect, ChangeEvent, FormEvent, useContext } from "react";
 import Swal from "sweetalert2";
 import { AuthContext } from "@/app/context/AuthContext";
@@ -14,6 +15,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { DownloadIcon } from 'lucide-react';
 
 const Badge = ({ color, children }: { color: string, children: React.ReactNode }) => (
   <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${color}`}>
@@ -46,15 +48,25 @@ export default function DispensaFuncionario() {
   const [motivo, setmotivo] = useState("");
   const [inicio, setinicio] = useState("");
   const [fim, setfim] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [documento, setdocumento] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    if (!accessToken && !userLoading) {
-      router.push('/logincomsenha')
-    }
-  }, [accessToken, router, userLoading]);
+  const exportarPDF = () => {
+      const doc = new jsPDF();
+      doc.text('Relatório de Dispensa', 14, 16);
+      autoTable(doc, {
+        head: [['Funcionário', 'Entrada', 'Saída', 'Data', 'Duração']],
+        body: dispensa.map(a => [
+          a.funcionario_nome,
+          a.motivo,
+          a.inicio || '-',
+          a.fim,
+        ]),
+        startY: 20,
+      });
+      doc.save('relatorio-dispensa.pdf');
+    };
+  
   useEffect(() => {
     fetch("https://backend-django-2-7qpl.onrender.com/api/dispensa/my/", {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -63,9 +75,42 @@ export default function DispensaFuncionario() {
      .then((j) => setdispensa(Array.isArray(j.message) ? j.message : j))
       .finally(() => setLoading(false));
   }, [accessToken]);
+  useEffect(() => {
+    if (!accessToken && !userLoading) {
+      router.push('/logincomsenha')
+    }
+  }, [accessToken, router, userLoading]);
+const DeletarDados = async (pk: number) => {
+  try {
+    const result = await Swal.fire({
+      title: 'Tem certeza?',
+      text: "Você não poderá reverter isso!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sim, cancelar!'
+    });
 
+    if (result.isConfirmed) {
+      const res = await fetch(`https://backend-django-2-7qpl.onrender.com/api/deletar-dispensa/${pk}/`, {
+        method: "DELETE",
+      });
+      await res.json();
+      setdispensa((prev) => prev.filter((item) => item.id !== pk));
+
+      Swal.fire(
+        'Cancelado!',
+        'Pedido Cancelado',
+        'success'
+      );
+    }
+  } catch {
+
+  }
+}
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) setFile(e.target.files[0]);
+    if (e.target.files?.[0]) setdocumento(e.target.files[0]);
   };
 function calculateDays(start: string, end: string): number {
   const inicio = new Date(start);
@@ -76,74 +121,64 @@ function calculateDays(start: string, end: string): number {
 }
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!accessToken) return Swal.fire("Erro", "Faça login primeiro", "error");
-    const inicioDate = new Date(inicio);
-    const fimDate = new Date(fim);
-    if(inicioDate > fimDate) {
-      return Swal.fire("Erro", "A data de início não pode ser posterior à data de término", "error");
-    }
-    const body = new FormData();
-    body.append("motivo", motivo);
-    body.append("inicio", inicio);
-    body.append("fim", fim);
-    if (file) {
-      body.append("justificativo", file);
+     e.preventDefault();
+
+  if (!accessToken) return Swal.fire("Erro", "Faça login primeiro", "error");
+
+  const inicioDate = new Date(inicio);
+  const fimDate = new Date(fim);
+  if (inicioDate > fimDate) {
+    return Swal.fire("Erro", "A data de início não pode ser posterior à data de término", "error");
+  }
+
+  let uploadcareFileUrl = null;
+
+  if (documento) {
+    const uploadData = new FormData();
+    uploadData.append("UPLOADCARE_STORE", "1");
+    uploadData.append("UPLOADCARE_PUB_KEY", "41450941b70f42384f1f"); // substitua pela sua PUBLIC KEY
+    uploadData.append("file", documento);
+
+    const uploadRes = await fetch("https://upload.uploadcare.com/base/", {
+      method: "POST",
+      body: uploadData,
+    });
+
+    const uploadJson = await uploadRes.json();
+
+    if (!uploadRes.ok || !uploadJson.file) {
+      return Swal.fire("Erro", "Falha ao enviar o documento para Uploadcare", "error");
     }
 
-    if (file) {
-      Swal.fire({ title: 'Carregando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    }
-    const res = await fetch("https://166e-102-218-85-158.ngrok-free.app/api/dispensa/create/", {
+    uploadcareFileUrl = `https://ucarecdn.com/${uploadJson.file}/`;
+  }
+
+  const payload = {
+    motivo,
+    inicio,
+    fim,
+    justificativo: uploadcareFileUrl,
+  };
+    const res = await fetch("https://backend-django-2-7qpl.onrender.com/api/dispensa/create/", {
       method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-      body,
+      headers: { Authorization: `Bearer ${accessToken}`,
+      "Content-Type":"application/json",
+       },
+      body:JSON.stringify(payload)
     });
 
     if (!res.ok) return Swal.fire("Erro", "Falha ao enviar pedido", "error");
     const json = await res.json();
     console.log(json);
     setdispensa((prev) => [json, ...prev]);
-    setmotivo(""); setinicio(""); setfim(""); setFile(null);
+    setmotivo(""); setinicio(""); setfim(""); setdocumento(null);
     Swal.fire("Sucesso", "Pedido enviado!", "success");
   };
-  useEffect(() => {
-  let isMounted = true; 
 
-  if (!accessToken) return;
-
-  const fetchData = async () => {
-    try {
-  
-      if (isMounted) {
-        setLoading(false); 
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      if (isMounted) setLoading(false);
-    }
-  };
-
-  fetchData();
-
-  return () => {
-    isMounted = false;
-  };
-}, [accessToken]);
-
- if (loading) {
-      Swal.fire({
-        title: 'Carregando Dispensas...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-    }else {
-      Swal.close();
-    }
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Meus Pedidos de Dispensa</h1>
+      <DownloadIcon onClick={exportarPDF}/>
       <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <div>
           <label>Motivo</label>
@@ -170,7 +205,7 @@ function calculateDays(start: string, end: string): number {
         </div>
         <Button className="bg-sky-500 text-white" type="submit">Enviar Pedido</Button>
       </form>
-
+    
       <Table>
         <TableHeader>
           <TableRow>
@@ -187,7 +222,6 @@ function calculateDays(start: string, end: string): number {
             <TableRow key={l.id}>
               <TableCell>{l.motivo}</TableCell>
               <TableCell>
-                {formatDate(l.inicio)} - {formatDate(l.fim)}<br />
                 <span className="text-xs text-gray-500">
                   {calculateDays(l.inicio, l.fim)} dia(s)
                 </span>
@@ -204,10 +238,14 @@ function calculateDays(start: string, end: string): number {
               <TableCell>{l.admin_comentario || "—"}</TableCell>
               <TableCell>
                 {l.justificativo ? (
-                  <a href={`https://166e-102-218-85-158.ngrok-free.app/api/media/justificativo/${l.justificativo?.split('/').pop()}`} target="_blank" rel="noopener noreferrer">Ver PDF</a>
+                 <a href={l.justificativo} target="_blank" rel="noopener noreferrer">Ver PDF</a>
                 ) : "—"}
               </TableCell>
-              <TableCell>{l.funcionario_nome}</TableCell>
+            <TableCell>
+              {l.status === 'pendente' ? (
+                <Button className="bg-red-600" onClick={()=>DeletarDados(l.id)} >Cancelar o Pedido</Button>
+              ) : null}
+            </TableCell>
             </TableRow>
           ))}
         </TableBody>
