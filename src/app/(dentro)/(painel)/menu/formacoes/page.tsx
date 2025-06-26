@@ -57,7 +57,7 @@ export default function EmployeeCoursesPage() {
       await fetch(`https://new-avd.onrender.com/trainees/${userName}`).then(res => res.json())
       .then(json => {
         setTrainees(json.message || [])
-        console.log('Trainees:',trainees)
+        // console.log('Trainees:',trainees)
         // console.log(courses)
       })
 
@@ -99,7 +99,8 @@ export default function EmployeeCoursesPage() {
   return (
     <div>
       <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Cursos Disponíveis {userName} </h1>
+        <h1 className="text-2xl font-bold mb-4">Seja Bem-Vindo, {userName} </h1>
+        <h2 className="text-1xl font-bold mb-4">Cursos Disponíveis </h2>
       <Input
         placeholder="Buscar curso..."
         value={filter}
