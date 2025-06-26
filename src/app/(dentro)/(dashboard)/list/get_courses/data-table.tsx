@@ -90,7 +90,7 @@ export function DataTable<TData, TValue>({
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('https://new-avd.onrender.com/trainings/insert_course', {
+      const response = await fetch('https://app-e5d29f72-5de3-4ffe-af68-81bd6fa126ea.cleverapps.io/trainings/insert_course', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,41 +344,40 @@ const enrollWorker = async (e: React.FormEvent) => {
   setIsSubmitting(true)
   try {
 
-    APIs.getWorkerSignedIn().then((data) => {
-      data.map((workerName: any) => {
-        console.log(workerName.nome)
-        if(workerName.nome){
-          APIs.getData().then((datasGot) => {
-            datasGot.map((data) => {
-              console.log('Datas got:', data.course_name)
+    // 1. Verifica se o trabalhador está registrado
+    const workers = await APIs.getWorkerSignedIn();
+    const workerExists = workers.some((worker: any) => worker.nome === traineeData.nome);
 
-              if(data.course_name){
-                postEnrollData()
-              }
-              else{
-                console.log('Curso não encontrado')
-                Swal.fire({
+    if (!workerExists) {
+
+      Swal.fire({
+                  icon: "error",
+                  title: "Oops...",
+                  text: "Funcionário não encontrado!",
+                  footer: "Certifique-se de que o funcionário está registrado!"
+            })
+
+      throw new Error('Trabalhador não encontrado!!');
+      
+    }
+
+    // 2. Busca os cursos disponíveis
+    const courseData = await APIs.getData();
+    const courseExists = courseData.some(course => course.course_name === traineeData.curso);
+    console.log("course.course_name === traineeData.curso:", courseExists, courseData)
+
+    if (!courseExists) {
+      Swal.fire({
                   icon: "error",
                   title: "Oops...",
                   text: "Curso não encontrado!",
                   footer: "Certifique-se de que o nome do curso está correcto!"
-                })
-              }
-
             })
-          })
-        }
-        else{
-          console.log('Funcionário não registrado')
-                Swal.fire({
-                  icon: "error",
-                  title: "Oops...",
-                  text: "Funcionário não registrado!",
-                  footer: "Certifique-se de que o nome do curso está correcto!"
-                })
-        }
-      })
-    })
+      throw new Error('Curso não encontrado');
+    }
+
+    // 3. Se tudo estiver correto, faz a inscrição
+    await postEnrollData();
 
   } catch (error) {
     console.error('Erro ao inscrever funcionário:', error)
@@ -660,7 +659,7 @@ const table = useReactTable({
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
-          Previous
+          Anterior
         </Button>
         <Button
           variant="outline"
@@ -668,7 +667,7 @@ const table = useReactTable({
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >
-          Next
+          Proxímo
         </Button>
       </div>
 
